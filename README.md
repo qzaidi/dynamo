@@ -77,6 +77,41 @@ table.Delete("ID", 42).If("Score <= ? AND begins_with($, ?)", cutoff, "Name", "G
 table.Put(item{ID: 42}).If("attribute_not_exists(ID)").Run()
 ```
 
+### Pagination
+
+	var (
+			nextRange int64
+			nextUserId int64
+		)
+
+	var result []widget
+	query := table.Get("UserID", w.UserID).Limit(10)
+
+	if nextRange != "" && nextUserId != "" {
+		query.StartKey(map[string]*dynamodb.AttributeValue{
+			"Time": {
+				N: aws.Int64(nextRange),
+			}, "UserId": {
+				N: aws.Int64(nextUserId),
+			},
+		})
+	}
+
+	err := query.All(&result)
+	// Handle error here
+
+
+	paginatorMap := query.GetLastEvaluatedKey()
+	log.Printf("paginatorMap %+v", paginatorMap)
+
+	if paginatorMap["request_id"] != nil {
+		nextRange = *paginatorMap["request_id"].N
+	}
+	if paginatorMap["guest_id"] != nil {
+		nextUserId = *paginatorMap["guest_id"].N
+	}
+
+	// Pass this nextRang, and nextUserId back to the same fuction to retrieve other results
 
 ### Integration tests
 
