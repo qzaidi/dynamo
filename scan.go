@@ -126,6 +126,20 @@ type scanIter struct {
 	unmarshal unmarshalFunc
 }
 
+func (s *Scan) GetLastEvaluatedKey() map[string]*dynamodb.AttributeValue {
+	return s.startKey
+}
+
+func (s *Scan) StartKey(dynamoAttributes map[string]*dynamodb.AttributeValue) *Scan {
+	s.startKey = dynamoAttributes
+	return s
+}
+
+func (s *Scan) Limit(limit int64) *Scan {
+	s.limit = limit
+	return s
+}
+
 // Next tries to unmarshal the next result into out.
 // Returns false when it is complete or if it runs into an error.
 func (itr *scanIter) Next(out interface{}) bool {
@@ -143,6 +157,11 @@ func (itr *scanIter) NextWithContext(ctx aws.Context, out interface{}) bool {
 		item := itr.output.Items[itr.idx]
 		itr.err = itr.unmarshal(item, out)
 		itr.idx++
+
+		if itr.output.LastEvaluatedKey != nil {
+			itr.scan.startKey = itr.output.LastEvaluatedKey
+		}
+
 		return itr.err == nil
 	}
 
