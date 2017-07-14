@@ -104,11 +104,11 @@ table.Put(item{ID: 42}).If("attribute_not_exists(ID)").Run()
 	paginatorMap := query.GetLastEvaluatedKey()
 	log.Printf("paginatorMap %+v", paginatorMap)
 
-	if paginatorMap["request_id"] != nil {
-		nextRange = *paginatorMap["request_id"].N
+	if paginatorMap["UserId"] != nil {
+		nextRange = *paginatorMap["UserId"].N
 	}
-	if paginatorMap["guest_id"] != nil {
-		nextUserId = *paginatorMap["guest_id"].N
+	if paginatorMap["Time"] != nil {
+		nextUserId = *paginatorMap["Time"].N
 	}
 
 	// Pass this nextRang, and nextUserId back to the same fuction to retrieve other results
