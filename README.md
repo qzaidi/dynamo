@@ -77,6 +77,51 @@ table.Delete("ID", 42).If("Score <= ? AND begins_with($, ?)", cutoff, "Name", "G
 table.Put(item{ID: 42}).If("attribute_not_exists(ID)").Run()
 ```
 
+### Pagination
+
+	var (
+			nextRange int64
+			nextUserId int64
+			nextIndex int64 // field on which the LSI index is created in dynamo
+		)
+
+	var result []widget
+	query := table.Get("UserID", w.UserID).Limit(10)
+
+    query.Index("lsIIndex") // Add your LSI index here
+	query.Order(dynamo.Descending)
+
+	if nextRange != "" && nextUserId != "" && nextIndex != ""{
+		query.StartKey(map[string]*dynamodb.AttributeValue{
+			"Time": {
+				N: aws.Int64(nextRange),
+			}, "UserId": {
+				N: aws.Int64(nextUserId),
+			},
+			 "NextIndex": {
+				N: aws.Int64(nextIndex),
+			},
+		})
+	}
+
+	err := query.All(&result)
+	// Handle error here
+
+
+	paginatorMap := query.GetLastEvaluatedKey()
+	log.Printf("paginatorMap %+v", paginatorMap)
+
+	if paginatorMap["UserId"] != nil {
+		nextRange = *paginatorMap["UserId"].N
+	}
+	if paginatorMap["Time"] != nil {
+		nextUserId = *paginatorMap["Time"].N
+	}
+	if paginatorMap["NextIndex"] != nil {
+		nextUserId = *paginatorMap["NextIndex"].N
+	}
+
+	// Pass this nextRang, and nextUserId back to the same fuction to retrieve other results
 
 ### Integration tests
 

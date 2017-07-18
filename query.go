@@ -285,7 +285,6 @@ type queryIter struct {
 func (itr *queryIter) Next(out interface{}) bool {
 	return itr.NextWithContext(aws.BackgroundContext(), out)
 }
-
 func (itr *queryIter) NextWithContext(ctx aws.Context, out interface{}) bool {
 	// stop if we have an error
 	if itr.err != nil {
@@ -303,6 +302,10 @@ func (itr *queryIter) NextWithContext(ctx aws.Context, out interface{}) bool {
 		itr.err = itr.unmarshal(item, out)
 		itr.idx++
 		itr.n++
+		if itr.output.LastEvaluatedKey != nil {
+			itr.query.startKey = itr.output.LastEvaluatedKey
+
+		}
 		return itr.err == nil
 	}
 
@@ -353,6 +356,15 @@ func (q *Query) All(out interface{}) error {
 	for iter.Next(out) {
 	}
 	return iter.Err()
+}
+
+func (q *Query) GetLastEvaluatedKey() map[string]*dynamodb.AttributeValue {
+	return q.startKey
+}
+
+func (q *Query) StartKey(dynamoAttributes map[string]*dynamodb.AttributeValue) *Query {
+	q.startKey = dynamoAttributes
+	return q
 }
 
 // Iter returns a results iterator for this request.
@@ -416,7 +428,7 @@ func (q *Query) queryInput() *dynamodb.QueryInput {
 
 func (q *Query) keyConditions() map[string]*dynamodb.Condition {
 	conds := map[string]*dynamodb.Condition{
-		q.hashKey: &dynamodb.Condition{
+		q.hashKey: {
 			AttributeValueList: []*dynamodb.AttributeValue{q.hashValue},
 			ComparisonOperator: Equal,
 		},
